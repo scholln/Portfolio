@@ -1,13 +1,31 @@
-Version: 1.0
+library(tidyverse)
 
-RestoreWorkspace: Default
-SaveWorkspace: Default
-AlwaysSaveHistory: Default
+library(readxl)
 
-EnableCodeIndexing: Yes
-UseSpacesForTab: Yes
-NumSpacesForTab: 2
-Encoding: UTF-8
 
-RnwWeave: Sweave
-LaTeX: pdfLaTeX
+outpatient <- read_excel("Synthetic Data Small - Facility Outpatient 10082021.xlsx")
+
+coverage <- read_excel("Synthetic Data Small - Coverage 10082021.xlsx")
+
+inpatient <- read_excel("Synthetic Data Small - Facility Inpatient 10082021.xlsx")
+
+
+member <- read_excel("Synthetic Data Small - Member 10082021.xlsx")
+
+patient <- read_excel("Synthetic Data Small - Patient 10082021.xlsx")
+
+pharmacy <- read_excel("Synthetic Data Small - Pharmacy 10082021.xlsx")
+
+professional <- read_excel("Synthetic Data Small - Professional 10082021.xlsx")
+
+
+Test <- full_join(outpatient, coverage, by = "Member ID (secure)")
+
+Synthetic <- full_join(outpatient, coverage, member, by = "Member ID (secure)")
+
+half <- full_join(patient, pharmacy, professional, by = "Member ID (secure)")
+
+full_synthetic <- full_join(half, Synthetic, inpatient, by = "Member ID (secure)")
+
+
+
