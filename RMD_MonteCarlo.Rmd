@@ -4,7 +4,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
 ## R Markdown
@@ -28,8 +28,68 @@ plot(pressure)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
-```{r}
+```{r Now its time to get funky}
 
+ICD_10_accuracy <- full_synthetic %>%
+  select('Member ID (secure)', memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x, princ_icd10_diag_cd, admtng_icd10_diag_cd)
+  
+view(ICD_10_accuracy)
+
+```
+
+
+```{r function to check accurarcy}
+
+# accuracy <- function(data_set, col_name1, col_name2)
+#   {
+#   
+#   if((data_set$col_name1) == (data_set$col_name2)){
+#     
+#     mutate(data_set, Accurate = 1)
+#   }
+#   else{
+#     mutate(data_set, Accurate = 0)
+#   }
+#   
+#     
+#   
+#   
+# }
+# 
+# accuracy(ICD_10_accuracy, princ_icd10_diag_cd, admtng_icd10_diag_cd)
+
+
+ICD_10_accuracy %>%
+  mutate(accurate = if_else(princ_icd10_diag_cd == admtng_icd10_diag_cd, 1, 0)) %>%
+  filter(!is.na(accurate))
+
+
+```
+
+Holy smokes that was a huge bust, there were no cases where the admitting ICD10 and the diagnosis ICD10 where the same.  Either they had an NA or did not match
+
+
+
+```{r We get up and try again}
+
+Amount_allowed <- full_synthetic %>%
+  select(princ_icd10_diag_cd, "Member ID (secure)",  memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x,)
+  
+
+Diag_amount <- Amount_allowed %>%
+  group_by(princ_icd10_diag_cd) %>%
+  summarise(mean = mean(allwd_amt.x), sd = sd(allwd_amt.x))
+
+```
+
+
+
+```{r time to plot}
+
+ggplot(Diag_amount, mapping = aes(x = mean)) +
+  geom_histogram() + facet_wrap(~princ_icd10_diag_cd)
+  
+  
 
 ```
 
