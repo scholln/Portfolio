@@ -73,12 +73,12 @@ Holy smokes that was a huge bust, there were no cases where the admitting ICD10 
 ```{r We get up and try again}
 
 Amount_allowed <- full_synthetic %>%
-  select(princ_icd10_diag_cd, "Member ID (secure)",  memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x,)
+  select(princ_icd10_diag_cd, "Member ID (secure)",  memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x, sbmtd_amt.x, copay_coin_amt, coin_amt, ded_amt)
   
 
-Diag_amount <- Amount_allowed %>%
+Diag_amount_allowed <- Amount_allowed %>%
   group_by(princ_icd10_diag_cd) %>%
-  summarise(mean = mean(allwd_amt.x), sd = sd(allwd_amt.x))
+  summarise(mean = mean(allwd_amt.x, na.rm = TRUE), sd = sd(allwd_amt.x, na.rm = TRUE), n = n())
 
 ```
 
@@ -90,6 +90,31 @@ ggplot(Diag_amount, mapping = aes(x = mean)) +
   geom_histogram() + facet_wrap(~princ_icd10_diag_cd)
   
   
+
+```
+
+
+
+```{r function time}
+
+
+
+
+map2(Diag_amount_allowed$mean, Diag_amount_allowed$sd, ~rnorm(100, .x, .y))
+```
+
+
+```{r Testing time}
+
+Diag_amount_allowed %>%
+  select(A08.11) %>%
+  rnorm(n = 100, mean = mean, sd = sd)
+
+```
+
+```{r}
+
+rnorm(10, 15, 2)
 
 ```
 
