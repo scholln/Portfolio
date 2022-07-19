@@ -5,6 +5,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+
+
+
+library(shiny)
 ```
 
 ## R Markdown
@@ -13,17 +17,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
-```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
@@ -84,37 +79,66 @@ Diag_amount_allowed <- Amount_allowed %>%
 
 
 
-```{r time to plot}
-
-ggplot(Diag_amount, mapping = aes(x = mean)) +
-  geom_histogram() + facet_wrap(~princ_icd10_diag_cd)
-  
-  
-
-```
-
-
 
 ```{r function time}
 
 
-
+## I found that this produced a huge dataset that was unusable due to too many NA's.  Many entries in the diagnosis had nothing but NA's, we couldn't get an accurate picture of it with so many entries with NA's.  That, and some entries had only one value to return.
 
 map2(Diag_amount_allowed$mean, Diag_amount_allowed$sd, ~rnorm(100, .x, .y))
 ```
 
 
-```{r Testing time}
 
-Diag_amount_allowed %>%
-  select(A08.11) %>%
-  rnorm(n = 100, mean = mean, sd = sd)
+
+```{r Let's change gears and do MLM}
+
+model <- lm(ded_amt~allwd_amt.x+sbmtd_amt.x+copay_coin_amt+coin_amt, Amount_allowed)
 
 ```
 
-```{r}
+```{r Print the model to check}
 
-rnorm(10, 15, 2)
+print(model)
+
+```
+
+```{r Let's try a formula}
+
+deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
+  
+  deductible = 22.95425 + (allwd_amt * 804.88442) + (sbtd_amt * -784.75091) + (copay_coin_amt * -0.02612) + (coin_amt * 0.72997)
+  
+  return(deductible)
+}
+
+```
+
+```{r Testing it out}
+
+
+
+deductible(5000, 2000, 200, 500)
+
+
+```
+
+```{r We are going to explore further into the Original dataset}
+
+Location <- full_synthetic2 %>%
+  select(memb_brth_dt.x, memb_gender_cd.x, memb_rltnshp_cd, patient_name, state_nm, county_nm, country, address, mbrs_crnt_prim_zip_cd)
+
+```
+
+
+```{r Seeing patient location}
+
+Location %>%
+  group_by(state_nm) %>%
+  ggplot(aes(county_nm, fill = state_nm)) +
+  geom_bar()
+
+
 
 ```
 
