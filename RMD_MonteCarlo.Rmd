@@ -6,9 +6,11 @@ output: html_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 
-
+library(readxl)
 
 library(shiny)
+
+library(broom)
 ```
 
 ## R Markdown
@@ -17,8 +19,59 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
+```{r}
+Synthetic_Data_Small_Coverage_10082021 <- read_excel("Synthetic Data Small - Coverage 10082021.xlsx")
 
 
+
+
+
+
+outpatient <- read_excel("Synthetic Data Small - Facility Outpatient 10082021.xlsx")
+
+coverage <- read_excel("Synthetic Data Small - Coverage 10082021.xlsx")
+
+
+facility_inpatient <- read_excel("Synthetic Data Small - Facility Inpatient 10082021.xlsx")
+
+member <- read_excel("Synthetic Data Small - Member 10082021.xlsx")
+
+patient <- read_excel("Synthetic Data Small - Patient 10082021.xlsx")
+
+pharmacy <- read_excel("Synthetic Data Small - Pharmacy 10082021.xlsx")
+
+professional <- read_excel("Synthetic Data Small - Professional 10082021.xlsx")
+
+
+Test <- full_join(outpatient, coverage, by = "Member ID")
+
+Test <- full_join(outpatient, coverage, by = "Member ID (secure)")
+
+View(Test)
+Synthetic <- full_join(outpatient, coverage, facility_inpatient, member, patient, pharmacy, professional, by = "Member ID (secure)")
+
+Synthetic <- full_join(outpatient, coverage, facility_inpatient, member, by = "Member ID (secure)")
+
+View(facility_inpatient)
+
+Synthetic <- full_join(outpatient, coverage, member, by = "Member ID (secure)")
+
+View(Synthetic)
+half <- full_join(facility_inpatient, patient, pharmacy, professional, by = "Member ID (secure)")
+
+half <- full_join(patient, pharmacy, professional, by = "Member ID (secure)")
+
+inpatient <- read_excel("Synthetic Data Small - Facility Inpatient 10082021.xlsx")
+
+
+full_synthetic <- full_join(half, Synthetic, inpatient, by = "Member ID (secure)")
+
+View(full_synthetic)
+View(coverage)
+View(patient)
+```
+
+So all of this above is what I like to call "the great join" where I downloaded all of the excel files into R, and then proceeded to join them together to bring all the data into one table.
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
@@ -61,7 +114,7 @@ ICD_10_accuracy %>%
 
 ```
 
-Holy smokes that was a huge bust, there were no cases where the admitting ICD10 and the diagnosis ICD10 where the same.  Either they had an NA or did not match
+Holy smokes that was a huge bust, there were no cases where the admitting ICD10 and the diagnosis ICD10 where the same.  Either they had an NA or did not match.  Important to note because we can see the admitting diagnosis does not equal the original diagnosis.
 
 
 
@@ -103,6 +156,40 @@ print(model)
 
 ```
 
+```{r Now we try to get a nested data frame}
+
+
+Nested_amount_allowed <- Amount_allowed %>%
+  group_by(state_nm) %>%
+  nest()
+
+```
+
+```{r Now we get the formula to each state}
+
+Nested_amount_allowed <- Nested_amount_allowed %>%
+  mutate(model = map(data, ~lm(model, data = .))) 
+
+```
+
+```{r Time to unnest this mess}
+
+Nested_amount_allowed <- Nested_amount_allowed %>%
+  unnest(data)
+
+```
+
+
+
+```{r Summary of the Model}
+broom::glance(model)
+
+```
+
+
+
+
+
 ```{r Let's try a formula}
 
 deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
@@ -126,7 +213,7 @@ deductible(5000, 2000, 200, 500)
 ```{r We are going to explore further into the Original dataset}
 
 Location <- full_synthetic2 %>%
-  select(memb_brth_dt.x, memb_gender_cd.x, memb_rltnshp_cd, patient_name, state_nm, county_nm, country, address, mbrs_crnt_prim_zip_cd)
+  select(memb_brth_dt.x, memb_gender_cd.x, memb_rltnshp_cd, patient_name, state_nm, county_nm, country, address, mbrs_crnt_prim_zip_cd, "Member ID (secure)")
 
 ```
 
@@ -141,4 +228,42 @@ Location %>%
 
 
 ```
+.  We can also see the majority of entries are from Illinois and the next being Texas.
+
+
+I now have curiosity from Cook county claims.  Let's explore
+
+```{r}
+
+Location_Amount <- full_join(Amount_allowed, Location, BY = "Member ID (secure)")
+## okay so, we ran into an issue here where I got "Error: cannot allocate vector of size 6.3 Gb" So we are gonna do a different approach...
+
+```
+
+```{r New way or the highway}
+Location_amount <- full_synthetic2 %>%
+  select(princ_icd10_diag_cd, "Member ID (secure)",  memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x, sbmtd_amt.x, copay_coin_amt, coin_amt, ded_amt, state_nm, county_nm, country, address, mbrs_crnt_prim_zip_cd)
+```
+
+```{r Time for some numerical summaries}
+
+Location_amount %>%
+  group_by(princ_icd10_diag_cd) %>%
+  filter(county_nm == "COOK") %>%
+  summarise(n = n()) %>%
+  arrange(desc(n))
+#This shows us that in the county with the most claims, the most common diagnosis was N18.6.  This code is for end-stage renal disease.
+
+```
+```{r Exploring N18.6}
+
+Location_amount %>%
+  filter(princ_icd10_diag_cd == "N18.6")
+
+
+```
+
+
+
+
 
