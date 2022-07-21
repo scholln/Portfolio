@@ -43,7 +43,7 @@ pharmacy <- read_excel("Synthetic Data Small - Pharmacy 10082021.xlsx")
 professional <- read_excel("Synthetic Data Small - Professional 10082021.xlsx")
 
 
-Test <- full_join(outpatient, coverage, by = "Member ID")
+Test <- full_join(outpatient, coverage, by = "Member ID (secure)")
 
 Test <- full_join(outpatient, coverage, by = "Member ID (secure)")
 
@@ -142,24 +142,55 @@ map2(Diag_amount_allowed$mean, Diag_amount_allowed$sd, ~rnorm(100, .x, .y))
 ```
 
 
+```{r Let's do some calculations}
+allwd_amnt_tibble <- full_synthetic2 %>%
+  summarise(mean = mean(allwd_amt.x, na.rm = TRUE), sd = sd(allwd_amt.x, na.rm = TRUE))
+
+sbmtd_amnt_tibble <- full_synthetic2 %>%
+  summarise(mean = mean(sbmtd_amt.x, na.rm = TRUE), sd = sd(sbmtd_amt.x, na.rm = TRUE))
+
+copay_coin_amnt_tibble <- full_synthetic2 %>%
+  summarise(mean = mean(copay_coin_amt, na.rm = TRUE), sd = sd(copay_coin_amt, na.rm = TRUE))
+
+coin_amnt_tibble <- full_synthetic2 %>%
+  summarise(mean = mean(coin_amt, na.rm = TRUE), sd = sd(coin_amt, na.rm = TRUE))
+
+ded_amnt_tibble <- full_synthetic2 %>%
+  summarise(mean = mean(ded_amt, na.rm = TRUE), sd = sd(coin_amt, na.rm = TRUE))
+
+
+```
+
+
+```{r Simulation and what not}
+
+Allwd_amnt_column <- rnorm(1000, mean = allwd_amnt_tibble$mean, sd = allwd_amnt_tibble$sd)
+Sbmtd_amnt_column <- rnorm(1000, mean = sbmtd_amnt_tibble$mean, sd = allwd_amnt_tibble$sd)
+Copay_coin_amnt_column <- rnorm(1000, mean = copay_coin_amnt_tibble$mean, sd = copay_coin_amnt_tibble$sd)
+Coin_amnt_column <- rnorm(1000, mean = coin_amnt_tibble$mean, sd = coin_amnt_tibble$sd)
+Ded_amnt_column <- rnorm(1000, mean = ded_amnt_tibble$mean, sd = ded_amnt_tibble$sd)
+
+Linear_frame <- tibble(Allwd_amnt_column, Sbmtd_amnt_column, Copay_coin_amnt_column, Coin_amnt_column, Ded_amnt_column)
+
+```
 
 
 ```{r Let's change gears and do MLM}
 
-model <- lm(ded_amt~allwd_amt.x+sbmtd_amt.x+copay_coin_amt+coin_amt, Amount_allowed)
+model_for_ded <- lm(Ded_amnt_column~Allwd_amnt_column+Sbmtd_amnt_column+Copay_coin_amnt_column+Coin_amnt_column, Linear_frame)
 
 ```
 
 ```{r Print the model to check}
 
-print(model)
+summary(model_for_ded)
 
 ```
 
 ```{r Now we try to get a nested data frame}
 
 
-Nested_amount_allowed <- Amount_allowed %>%
+Nested_amount_allowed2 <- Amount_allowed %>%
   group_by(state_nm) %>%
   nest()
 
@@ -167,8 +198,8 @@ Nested_amount_allowed <- Amount_allowed %>%
 
 ```{r Now we get the formula to each state}
 
-Nested_amount_allowed <- Nested_amount_allowed %>%
-  mutate(model = map(data, ~lm(model, data = .))) 
+Nested_amount_allowed2 <- Nested_amount_allowed2 %>%
+  mutate(model = map(data, ~lm(model_for_ded, data = .)))
 
 ```
 
@@ -179,10 +210,15 @@ Nested_amount_allowed <- Nested_amount_allowed %>%
 
 ```
 
+This is the part where I am running into trouble.  It is showing all the linear equations as the same.  It is showing them as the original "model_for_ded".  Please let me know your thoughts on this
 
+```{r Getting the coefficients for even more formulas}
 
-```{r Summary of the Model}
-broom::glance(model)
+print(Nested_amount_allowed2[[3]][[1]])
+print(Nested_amount_allowed2[[3]][[2]])
+print(Nested_amount_allowed2[[3]][[3]])
+print(Nested_amount_allowed2[[3]][[4]])
+print(Nested_amount_allowed2[[3]][[5]])
 
 ```
 
@@ -195,6 +231,41 @@ broom::glance(model)
 deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
   
   deductible = 22.95425 + (allwd_amt * 804.88442) + (sbtd_amt * -784.75091) + (copay_coin_amt * -0.02612) + (coin_amt * 0.72997)
+  
+  return(deductible)
+}
+
+deductible_New_York <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
+  
+  deductible =29.804432 + (allwd_amt *  0.002503) + (sbtd_amt * -0.001106) + (copay_coin_amt * 0.002440) + (coin_amt * 0.042544)
+  
+  return(deductible)
+}
+
+deductible_Illinois <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
+  
+  deductible = 29.804432 + (allwd_amt *  724.14601) + (sbtd_amt * -706.02762) + (copay_coin_amt * -0.03729) + (coin_amt * 1.09490)
+  
+  return(deductible)
+}
+
+deductible_Arizona <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
+  
+  deductible = 0.1280909 + (allwd_amt *  148.8685) + (sbtd_amt * -6.6826764) + (copay_coin_amt * -0.0004278) + (coin_amt * 0.0026185)
+  
+  return(deductible)
+}
+
+deductible_Texas <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
+  
+  deductible = 56.5658 + (allwd_amt *  148.8685) + (sbtd_amt * -145.1775) + (copay_coin_amt * -0.0570) + (coin_amt * 0.3753)
+  
+  return(deductible)
+}
+
+deductible_California <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
+  
+  deductible = 76.8014 + (allwd_amt *  4243.6768) + (sbtd_amt * -4137.5039) + (copay_coin_amt * -0.4802) + (coin_amt * -0.2482)
   
   return(deductible)
 }
@@ -228,7 +299,7 @@ Location %>%
 
 
 ```
-.  We can also see the majority of entries are from Illinois and the next being Texas.
+We can also see the majority of entries are from Illinois and the next being Texas.
 
 
 I now have curiosity from Cook county claims.  Let's explore
