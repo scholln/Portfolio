@@ -10,3 +10,16 @@ I am excited to start this as it will be a good first step into my career as a d
 
 ## **BIG GOALS**
 My big goals for this project is to have something I can point to employers or other professionals as a good milestone or marker for my skills in R.  To also get more experience, wrangling, cleaning and modifying data in R, and then doing the analysis in it.  And become familiar enough with R that I feel confident putting it on my resume and then utilizing it in a day to day career.
+
+
+## Table of contents
+Item 1: .gitignore
+This is the file that loads in files such as RData and Ruserdata
+Item 2: App.r
+This is the application that was developed to better predict deductible amounts for patients in certain states.
+Item 3: Essay Prompts
+Responses to the prompts given to by bradford
+Item 4:
+The RMD file that contains the main content of the project that includes creating tables, exploring data and getting the linear functions declared.
+Items 5-11:
+The excel files I loaded into R.  This is the raw data that I extracted for this project
