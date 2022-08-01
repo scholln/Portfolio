@@ -43,37 +43,31 @@ pharmacy <- read_excel("Synthetic Data Small - Pharmacy 10082021.xlsx")
 professional <- read_excel("Synthetic Data Small - Professional 10082021.xlsx")
 
 
-Test <- full_join(outpatient, coverage, by = "Member ID (secure)")
 
-Test <- full_join(outpatient, coverage, by = "Member ID (secure)")
 
-View(Test)
-Synthetic <- full_join(outpatient, coverage, facility_inpatient, member, patient, pharmacy, professional, by = "Member ID (secure)")
 
-Synthetic <- full_join(outpatient, coverage, facility_inpatient, member, by = "Member ID (secure)")
+Synthetic <- full_join(outpatient, coverage, facility_inpatient, member, by = "Member ID (secure)", suffix = c(".x", ".y"))
 
-View(facility_inpatient)
+
 
 Synthetic <- full_join(outpatient, coverage, member, by = "Member ID (secure)")
 
-View(Synthetic)
-half <- full_join(facility_inpatient, patient, pharmacy, professional, by = "Member ID (secure)")
+
+half <- full_join(facility_inpatient, patient, pharmacy, professional, by = "Member ID (secure)", suffix = c(".x", ".y"))
 
 half <- full_join(patient, pharmacy, professional, by = "Member ID (secure)")
 
 inpatient <- read_excel("Synthetic Data Small - Facility Inpatient 10082021.xlsx")
 
 
-full_synthetic <- full_join(half, Synthetic, inpatient, by = "Member ID (secure)")
+full_synthetic <- full_join(half, Synthetic, inpatient, by = "Member ID (secure)", suffix = c(".x", ".y"))
 
-View(full_synthetic)
-View(coverage)
-View(patient)
+
 ```
 
 So all of this above is what I like to call "the great join" where I downloaded all of the excel files into R, and then proceeded to join them together to bring all the data into one table.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
 
 
 ```{r Now its time to get funky}
@@ -85,7 +79,7 @@ view(ICD_10_accuracy)
 
 ```
 
-
+We 
 ```{r function to check accurarcy}
 
 # accuracy <- function(data_set, col_name1, col_name2)
@@ -114,17 +108,17 @@ ICD_10_accuracy %>%
 
 ```
 
-Holy smokes that was a huge bust, there were no cases where the admitting ICD10 and the diagnosis ICD10 where the same.  Either they had an NA or did not match.  Important to note because we can see the admitting diagnosis does not equal the original diagnosis.
+There were no cases where the admitting ICD10 and the diagnosis ICD10 where the same.  Either they had an NA or did not match.  Important to note because we can see the admitting diagnosis does not equal the original diagnosis.
 
 
 
 ```{r We get up and try again}
 
 Amount_allowed <- full_synthetic %>%
-  select(princ_icd10_diag_cd, "Member ID (secure)",  memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x, sbmtd_amt.x, copay_coin_amt, coin_amt, ded_amt)
+  select(state_nm, allwd_amt.x, sbmtd_amt.x, copay_coin_amt, coin_amt, ded_amt)
   
 
-Diag_amount_allowed <- Amount_allowed %>%
+Diag_amount_allowed <- full_synthetic %>%
   group_by(princ_icd10_diag_cd) %>%
   summarise(mean = mean(allwd_amt.x, na.rm = TRUE), sd = sd(allwd_amt.x, na.rm = TRUE), n = n())
 
@@ -141,26 +135,28 @@ Diag_amount_allowed <- Amount_allowed %>%
 map2(Diag_amount_allowed$mean, Diag_amount_allowed$sd, ~rnorm(100, .x, .y))
 ```
 
+From this, I will change gears and look for a way to find the most accurate deductible given the current data:
 
 ```{r Let's do some calculations}
-allwd_amnt_tibble <- full_synthetic2 %>%
+allwd_amnt_tibble <- full_synthetic %>%
   summarise(mean = mean(allwd_amt.x, na.rm = TRUE), sd = sd(allwd_amt.x, na.rm = TRUE))
 
-sbmtd_amnt_tibble <- full_synthetic2 %>%
+sbmtd_amnt_tibble <- full_synthetic %>%
   summarise(mean = mean(sbmtd_amt.x, na.rm = TRUE), sd = sd(sbmtd_amt.x, na.rm = TRUE))
 
-copay_coin_amnt_tibble <- full_synthetic2 %>%
+copay_coin_amnt_tibble <- full_synthetic %>%
   summarise(mean = mean(copay_coin_amt, na.rm = TRUE), sd = sd(copay_coin_amt, na.rm = TRUE))
 
-coin_amnt_tibble <- full_synthetic2 %>%
+coin_amnt_tibble <- full_synthetic %>%
   summarise(mean = mean(coin_amt, na.rm = TRUE), sd = sd(coin_amt, na.rm = TRUE))
 
-ded_amnt_tibble <- full_synthetic2 %>%
+ded_amnt_tibble <- full_synthetic %>%
   summarise(mean = mean(ded_amt, na.rm = TRUE), sd = sd(coin_amt, na.rm = TRUE))
 
 
 ```
 
+This is used to generate random samples of data as first creating normal distributions.  We do this to give the data some structure when generating the new samples.
 
 ```{r Simulation and what not}
 
@@ -174,12 +170,15 @@ Linear_frame <- tibble(Allwd_amnt_column, Sbmtd_amnt_column, Copay_coin_amnt_col
 
 ```
 
+We are combining all of the new generated data into a single tibble for simplicity 
 
 ```{r Let's change gears and do MLM}
 
 model_for_ded <- lm(Ded_amnt_column~Allwd_amnt_column+Sbmtd_amnt_column+Copay_coin_amnt_column+Coin_amnt_column, Linear_frame)
 
 ```
+
+This is to make the actual linear model and running it on the random data
 
 ```{r Print the model to check}
 
@@ -195,30 +194,13 @@ Nested_amount_allowed2 <- Amount_allowed %>%
   nest()
 
 ```
-
+Nesting the data to include State as policies and insurance amounts do differ from state to state.
 ```{r Now we get the formula to each state}
 
 Nested_amount_allowed2 <- Nested_amount_allowed2 %>%
-  mutate(model = map(data, ~lm(model_for_ded, data = .)))
-
-```
-
-```{r Time to unnest this mess}
-
-Nested_amount_allowed <- Nested_amount_allowed %>%
-  unnest(data)
-
-```
-
-This is the part where I am running into trouble.  It is showing all the linear equations as the same.  It is showing them as the original "model_for_ded".  Please let me know your thoughts on this
-
-```{r Getting the coefficients for even more formulas}
-
-print(Nested_amount_allowed2[[3]][[1]])
-print(Nested_amount_allowed2[[3]][[2]])
-print(Nested_amount_allowed2[[3]][[3]])
-print(Nested_amount_allowed2[[3]][[4]])
-print(Nested_amount_allowed2[[3]][[5]])
+  mutate(model = map(data, ~lm(ded_amt~., data = .x)),
+         fits = map(model, broom::tidy)) %>%
+  unnest(fits)
 
 ```
 
@@ -226,7 +208,20 @@ print(Nested_amount_allowed2[[3]][[5]])
 
 
 
-```{r Let's try a formula}
+
+```{r Testing out the application data}
+Nested_amount_allowed2 %>%
+      filter(state_nm  == "Arizona") %>%
+      mutate(values = c(1, 500, 600, 400, 200), 
+             multiply = estimate * values)%>%
+      summarise(pred = sum(multiply)) %>%
+  pull(pred)
+  
+```
+
+
+
+```{r General }
 
 deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
   
@@ -235,40 +230,7 @@ deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
   return(deductible)
 }
 
-deductible_New_York <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
-  
-  deductible =29.804432 + (allwd_amt *  0.002503) + (sbtd_amt * -0.001106) + (copay_coin_amt * 0.002440) + (coin_amt * 0.042544)
-  
-  return(deductible)
-}
 
-deductible_Illinois <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
-  
-  deductible = 29.804432 + (allwd_amt *  724.14601) + (sbtd_amt * -706.02762) + (copay_coin_amt * -0.03729) + (coin_amt * 1.09490)
-  
-  return(deductible)
-}
-
-deductible_Arizona <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
-  
-  deductible = 0.1280909 + (allwd_amt *  148.8685) + (sbtd_amt * -6.6826764) + (copay_coin_amt * -0.0004278) + (coin_amt * 0.0026185)
-  
-  return(deductible)
-}
-
-deductible_Texas <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
-  
-  deductible = 56.5658 + (allwd_amt *  148.8685) + (sbtd_amt * -145.1775) + (copay_coin_amt * -0.0570) + (coin_amt * 0.3753)
-  
-  return(deductible)
-}
-
-deductible_California <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
-  
-  deductible = 76.8014 + (allwd_amt *  4243.6768) + (sbtd_amt * -4137.5039) + (copay_coin_amt * -0.4802) + (coin_amt * -0.2482)
-  
-  return(deductible)
-}
 
 ```
 
