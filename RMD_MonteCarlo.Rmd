@@ -11,6 +11,8 @@ library(readxl)
 library(shiny)
 
 library(broom)
+
+install.packages('rsconnect')
 ```
 
 ## R Markdown
@@ -245,7 +247,7 @@ deductible(5000, 2000, 200, 500)
 
 ```{r We are going to explore further into the Original dataset}
 
-Location <- full_synthetic2 %>%
+Location <- full_synthetic %>%
   select(memb_brth_dt.x, memb_gender_cd.x, memb_rltnshp_cd, patient_name, state_nm, county_nm, country, address, mbrs_crnt_prim_zip_cd, "Member ID (secure)")
 
 ```
@@ -274,7 +276,7 @@ Location_Amount <- full_join(Amount_allowed, Location, BY = "Member ID (secure)"
 ```
 
 ```{r New way or the highway}
-Location_amount <- full_synthetic2 %>%
+Location_amount <- full_synthetic %>%
   select(princ_icd10_diag_cd, "Member ID (secure)",  memb_brth_dt.x, memb_gender_cd.x, patient_name, state_nm, allwd_amt.x, sbmtd_amt.x, copay_coin_amt, coin_amt, ded_amt, state_nm, county_nm, country, address, mbrs_crnt_prim_zip_cd)
 ```
 
