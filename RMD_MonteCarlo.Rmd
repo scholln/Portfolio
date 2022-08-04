@@ -81,7 +81,7 @@ view(ICD_10_accuracy)
 
 ```
 
-We 
+We set up this table to test ICD 10 accuracy 
 ```{r function to check accurarcy}
 
 # accuracy <- function(data_set, col_name1, col_name2)
@@ -127,7 +127,7 @@ Diag_amount_allowed <- full_synthetic %>%
 ```
 
 
-
+This next part was attempting to do the Monte carlo to generate new data based on diagnosis and get new financial data.
 
 ```{r function time}
 
@@ -223,7 +223,7 @@ Nested_amount_allowed2 %>%
 
 
 
-```{r General }
+```{r General formula for deducitble}
 
 deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
   
@@ -232,7 +232,7 @@ deductible <- function(allwd_amt, sbtd_amt, copay_coin_amt, coin_amt){
   return(deductible)
 }
 
-
+## This is meant as a standard deductible formula without taking state into consideration
 
 ```
 
@@ -252,6 +252,7 @@ Location <- full_synthetic %>%
 
 ```
 
+We are exploring more data by location as we noted earlier the differences in policy depending on location.
 
 ```{r Seeing patient location}
 
@@ -268,7 +269,7 @@ We can also see the majority of entries are from Illinois and the next being Tex
 
 I now have curiosity from Cook county claims.  Let's explore
 
-```{r}
+```{r Error code}
 
 Location_Amount <- full_join(Amount_allowed, Location, BY = "Member ID (secure)")
 ## okay so, we ran into an issue here where I got "Error: cannot allocate vector of size 6.3 Gb" So we are gonna do a different approach...
@@ -299,6 +300,6 @@ Location_amount %>%
 ```
 
 
-
+In the end, we were able to gather more insight on this data and provide an application to better predict deductible amounts.  We were able to find out how location in state affected the financial variables and what diagnosis was the most common.  Overall, we made great use of this synthetic data and bring real meaning and value out of it.
 
 
