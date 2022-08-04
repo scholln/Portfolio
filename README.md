@@ -24,7 +24,7 @@ Responses to the prompts given to by bradford
 
 [Link to lightning round essay responses](https://github.com/scholln/Portfolio/blob/main/Essay%20prompts.md#lightning-round)
 
-
+[Link to grade reflection](https://github.com/scholln/Portfolio/blob/main/Essay%20prompts.md#grade-reflection)
 
 ## Item 4:
 The RMD file that contains the main content of the project that includes creating tables, exploring data and getting the linear functions declared.
