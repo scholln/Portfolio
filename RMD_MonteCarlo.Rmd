@@ -12,7 +12,7 @@ library(shiny)
 
 library(broom)
 
-install.packages('rsconnect')
+library('rsconnect')
 ```
 
 ## R Markdown
@@ -271,7 +271,7 @@ I now have curiosity from Cook county claims.  Let's explore
 
 ```{r Error code}
 
-Location_Amount <- full_join(Amount_allowed, Location, BY = "Member ID (secure)")
+## Location_Amount <- full_join(Amount_allowed, Location, BY = "Member ID (secure)")
 ## okay so, we ran into an issue here where I got "Error: cannot allocate vector of size 6.3 Gb" So we are gonna do a different approach...
 
 ```
