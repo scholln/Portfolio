@@ -30,3 +30,6 @@ Responses to the prompts given to by bradford
 The RMD file that contains the main content of the project that includes creating tables, exploring data and getting the linear functions declared.
 ## Items 5-11:
 The excel files I loaded into R.  This is the raw data that I extracted for this project
+
+In the end of the day, I did attempt to get the app on a website using shinyapps.io but ran into an issue where it could not get the variables from the RMD file into the website app.  [Here is the link to the site](https://ey2e7x-scholln.shinyapps.io/monte_carlo/?_ga=2.129367499.693800004.1659995903-1289176881.1659995903)
+
